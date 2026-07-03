@@ -1,0 +1,116 @@
+services:
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env.prod
+    restart: unless-stopped
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - staticfiles:/var/lib/aromanavigator/static
+      - public_media:/var/lib/aromanavigator/user-media
+      - private_media:/var/lib/aromanavigator/private-media
+    command: >
+      sh -c "python manage.py db_waiter &&
+             python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn configs.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-3} --timeout ${GUNICORN_TIMEOUT:-120}"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket; s=socket.create_connection(('127.0.0.1', 8000), 2); s.close()\""]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env.prod
+    restart: unless-stopped
+    depends_on:
+      - app
+      - redis
+    volumes:
+      - public_media:/var/lib/aromanavigator/user-media
+      - private_media:/var/lib/aromanavigator/private-media
+    command: celery -A configs worker -l info
+
+  db:
+    image: mysql:8
+    env_file:
+      - ./.env.prod
+    restart: unless-stopped
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+
+  nextapp:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE}
+        API_BASE: ${API_BASE}
+        DJANGO_URL: ${DJANGO_URL}
+        NEXTAUTH_URL: ${NEXTAUTH_URL}
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
+    env_file:
+      - ./.env.prod
+    environment:
+      - NODE_ENV=production
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"const socket=require('node:net').connect(3000,'127.0.0.1',()=>{socket.end();process.exit(0)});socket.setTimeout(3000,()=>process.exit(1));socket.on('error',()=>process.exit(1))\"",
+        ]
+      interval: 10s
+      timeout: 4s
+      retries: 20
+      start_period: 20s
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      nextapp:
+        condition: service_healthy
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+      - staticfiles:/var/lib/aromanavigator/static:ro
+      - public_media:/var/lib/aromanavigator/user-media:ro
+
+volumes:
+  mysql_data:
+  staticfiles:
+  public_media:
+  private_media:

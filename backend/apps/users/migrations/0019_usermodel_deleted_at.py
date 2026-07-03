@@ -1,0 +1,15 @@
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+    dependencies = [
+        ("users", "0018_move_avatar_to_object_cover"),
+    ]
+
+    operations = [
+        migrations.AddField(
+            model_name="usermodel",
+            name="deleted_at",
+            field=models.DateTimeField(blank=True, db_index=True, null=True),
+        ),
+    ]

@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare env
+        run: |
+          if [ -f .env.example ]; then
+            cp .env.example .env
+          else
+            {
+              echo "NEXT_PUBLIC_APP_URL=http://localhost:3000"
+              echo "NEXT_PUBLIC_SITE_URL=http://localhost:3000"
+              echo "NEXT_PUBLIC_API_BASE=http://localhost:3000"
+              echo "API_BASE=http://localhost:3000"
+              echo "DJANGO_URL=http://localhost:8888"
+              echo "NEXTAUTH_URL=http://localhost:3000"
+              echo "NEXT_PUBLIC_GOOGLE_CLIENT_ID="
+              echo "DJANGO_PROXY_DEBUG=0"
+              echo "DJANGO_CLIENT_DEBUG=0"
+            } > .env
+          fi
+
+      - name: Typecheck
+        run: npm exec tsc -- --noEmit
+
+      - name: Unit tests
+        run: npm exec vitest run
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_DATABASE: aroma_db
+          MYSQL_USER: user
+          MYSQL_PASSWORD: user
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-libmysqlclient-dev build-essential pkg-config
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Prepare env
+        run: |
+          cp .env.example .env
+          python - <<'PY'
+          from pathlib import Path
+          import secrets
+
+          path = Path(".env")
+          text = path.read_text(encoding="utf-8")
+          text = text.replace("replace-with-a-long-random-secret", secrets.token_urlsafe(64))
+          text = text.replace("DEBUG=False", "DEBUG=True")
+          text = text.replace("DJANGO_ALLOWED_HOSTS=example.com,www.example.com", "DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,testserver")
+          text = text.replace("FRONTEND_URL=https://example.com", "FRONTEND_URL=http://localhost:3000")
+          text = text.replace("SESSION_COOKIE_SECURE=True", "SESSION_COOKIE_SECURE=False")
+          text = text.replace("CSRF_COOKIE_SECURE=True", "CSRF_COOKIE_SECURE=False")
+          text = text.replace("CSRF_TRUSTED_ORIGINS=https://example.com", "CSRF_TRUSTED_ORIGINS=http://localhost:3000")
+          text = text.replace("CORS_ALLOWED_ORIGINS=https://example.com", "CORS_ALLOWED_ORIGINS=http://localhost:3000")
+          text = text.replace("MYSQL_USER=aroma", "MYSQL_USER=root")
+          text = text.replace("MYSQL_PASSWORD=replace-with-strong-password", "MYSQL_PASSWORD=root")
+          text = text.replace("MYSQL_ROOT_PASSWORD=replace-with-strong-root-password", "MYSQL_ROOT_PASSWORD=root")
+          text = text.replace("HOST=db", "HOST=127.0.0.1")
+          text = text.replace("REDIS_URL=redis://redis:6379/0", "REDIS_URL=redis://127.0.0.1:6379/0")
+          text = text.replace("EMAIL_HOST_USER=aroma.navigator@gmail.com", "EMAIL_HOST_USER=")
+          text = text.replace("EMAIL_HOST_PASSWORD=replace-with-smtp-secret", "EMAIL_HOST_PASSWORD=")
+          text = text.replace("DEFAULT_FROM_EMAIL=Aroma Navigator <aroma.navigator@gmail.com>", "DEFAULT_FROM_EMAIL=Aroma Navigator <noreply@localhost>")
+          text = text.replace("MEDIA_ROOT=/var/lib/aromanavigator/media", "MEDIA_ROOT=storage")
+          text = text.replace("PUBLIC_MEDIA_ROOT=/var/lib/aromanavigator/user-media", "PUBLIC_MEDIA_ROOT=storage")
+          text = text.replace("PRIVATE_MEDIA_ROOT=/var/lib/aromanavigator/private-media", "PRIVATE_MEDIA_ROOT=private_storage")
+          path.write_text(text, encoding="utf-8")
+          PY
+          grep -Ev '^(#|$)' .env >> "$GITHUB_ENV"
+
+      - name: Django checks
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+
+      - name: Backend tests
+        run: >
+          python manage.py test
+          apps.auth.tests.test_social_service
+          apps.auth.tests.test_google_login
+          apps.users.tests.test_register_and_profile_serializers
+          apps.users.tests.test_user_profile_contract
+          apps.users.tests.test_delete_self
+          apps.exchange.tests
+          apps.forum.tests.test_antispam_moderation
+          apps.comments.tests.test_api
+          apps.activity.tests.test_activity_api
+          apps.notifications.tests.test_notifications_service
+          --keepdb
+          --verbosity 1

@@ -1,0 +1,26 @@
+{
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.next": true,
+    "**/node_modules": true,
+    "mysql": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "mysql": true,
+    "backend/storage": true,
+    "backend/private_storage": true
+  },
+  "typescript.tsdk": "frontend/node_modules/typescript/lib",
+  "eslint.workingDirectories": [
+    {
+      "directory": "frontend",
+      "changeProcessCWD": true
+    }
+  ],
+  "python.analysis.extraPaths": ["backend"],
+  "python.defaultInterpreterPath": "python",
+  "editor.formatOnSave": false
+}

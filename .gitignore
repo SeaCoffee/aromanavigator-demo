@@ -1,0 +1,106 @@
+# =========================
+# IDE / OS
+# =========================
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.DS_Store
+Thumbs.db
+
+# =========================
+# Python / Django
+# =========================
+__pycache__/
+*.py[cod]
+*.pyc
+*$py.class
+
+venv/
+.venv/
+env/
+ENV/
+
+*.log
+
+# Django generated / uploads
+media/
+staticfiles/
+backend/storage/
+
+# local db / dumps / backups
+*.sqlite3
+*.db
+*.sql
+*.dump
+*.bak
+*.tar
+*.gz
+
+# =========================
+# MySQL local volume
+# =========================
+mysql/
+
+# =========================
+# Node / Next.js
+# =========================
+node_modules/
+.next/
+out/
+dist/
+build/
+
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/dist/
+frontend/build/
+
+# =========================
+# Env / secrets
+# =========================
+.env
+.env.*
+backend/.env
+backend/.env.*
+!.env.example
+!.env.*.example
+
+# E2E env with real credentials
+.env.e2e
+frontend/.env.e2e
+
+# =========================
+# Tests / reports
+# =========================
+coverage/
+playwright-report/
+test-results/
+
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+
+# =========================
+# Vercel / TS
+# =========================
+.vercel/
+frontend/.vercel/
+
+*.tsbuildinfo
+next-env.d.ts
+frontend/next-env.d.ts
+
+# =========================
+# Keys / certs
+# =========================
+*.pem
+*.key
+*.crt
+certbot/
+
+backend/private_storage/
+backend/storage/

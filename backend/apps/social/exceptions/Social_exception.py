@@ -1,0 +1,3 @@
+
+class SocialError(Exception):
+    pass

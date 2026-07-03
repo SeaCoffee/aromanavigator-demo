@@ -1,0 +1,7 @@
+services:
+  db:
+    volumes:
+      - mysql_test_data:/var/lib/mysql
+
+volumes:
+  mysql_test_data:

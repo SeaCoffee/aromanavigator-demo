@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}РђРєС‚РёРІР°С†С–СЏ Р°РєРєР°СѓРЅС‚Сѓ{% endblock %}
+
+{% block body %}
+  <h1>Р’С–С‚Р°СЋ, {{ name }}!</h1>
+
+  <p>
+    Р©РѕР± Р°РєС‚РёРІСѓРІР°С‚Рё Р°РєРєР°СѓРЅС‚, РїРµСЂРµР№РґС–С‚СЊ Р·Р° РїРѕСЃРёР»Р°РЅРЅСЏРј:
+  </p>
+
+  <p>
+    <a href="{{ url }}" style="display: inline-block; padding: 10px 16px; background: #222; color: #fff; text-decoration: none; border-radius: 6px;">
+      РђРєС‚РёРІСѓРІР°С‚Рё Р°РєРєР°СѓРЅС‚
+    </a>
+  </p>
+
+  <p>
+    РЇРєС‰Рѕ РєРЅРѕРїРєР° РЅРµ РїСЂР°С†СЋС”, РїРµСЂРµР№РґС–С‚СЊ РїРѕ РїРѕСЃРёР»Р°РЅРЅСЋ:
+  </p>
+
+  <p style="word-break: break-all;">
+    {{ url }}
+  </p>
+{% endblock %}

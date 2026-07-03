@@ -1,0 +1,69 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "dev: up",
+      "type": "shell",
+      "command": "docker compose up --build",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: up detached",
+      "type": "shell",
+      "command": "docker compose up -d --build",
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: down",
+      "type": "shell",
+      "command": "docker compose down",
+      "problemMatcher": []
+    },
+    {
+      "label": "backend: migrate",
+      "type": "shell",
+      "command": "docker compose exec app python manage.py migrate",
+      "problemMatcher": []
+    },
+    {
+      "label": "backend: check",
+      "type": "shell",
+      "command": "docker compose exec app python manage.py check",
+      "problemMatcher": []
+    },
+    {
+      "label": "backend: tests",
+      "type": "shell",
+      "command": "docker compose exec app python manage.py test --keepdb --verbosity 1",
+      "problemMatcher": []
+    },
+    {
+      "label": "frontend: typecheck",
+      "type": "shell",
+      "command": "npm exec tsc -- --noEmit",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "frontend: tests",
+      "type": "shell",
+      "command": "npm exec vitest run",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "quality: quick",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "backend: check",
+        "frontend: typecheck"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}
