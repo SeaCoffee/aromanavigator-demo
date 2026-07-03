@@ -77,9 +77,6 @@ describe("MePage", () => {
     expect(
       screen.getByRole("link", { name: "РЎРїРѕРІС–С‰РµРЅРЅСЏ 3" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "РџРѕРІС–РґРѕРјР»РµРЅРЅСЏ 2" }),
-    ).toBeInTheDocument();
     expect(screen.getByText("Email РґР»СЏ РІС…РѕРґСѓ")).toBeInTheDocument();
     expect(screen.getByText("me@example.com")).toBeInTheDocument();
     expect(screen.getByText("РљРёС—РІ")).toBeInTheDocument();

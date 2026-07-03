@@ -17,7 +17,7 @@ describe('buildDjangoMediaPath', () => {
   });
 
   it('encodes safe path segments', () => {
-    expect(buildDjangoMediaPath(['photos', 'С„РѕС‚Рѕ 1.jpg'])).toBe(
+    expect(buildDjangoMediaPath(['photos', 'фото 1.jpg'])).toBe(
       '/userApi/media/photos/%D1%84%D0%BE%D1%82%D0%BE%201.jpg',
     );
   });
